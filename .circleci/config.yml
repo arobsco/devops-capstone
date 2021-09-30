@@ -29,11 +29,11 @@ jobs:
     steps:
         - checkout
         - run: |
-          cd app
-          docker build -t ${DOCKERHUB_USERNAME}/capstone:v2  .
+            cd app
+            docker build -t ${DOCKERHUB_USERNAME}/capstone:v2  .
         - run: |
-          echo "${DOCKERHUB_PASSWORD}" | docker login --username ${DOCKERHUB_USERNAME} --password-stdin
-          docker push ${DOCKERHUB_USERNAME}/capstone:v2
+            echo "${DOCKERHUB_PASSWORD}" | docker login --username ${DOCKERHUB_USERNAME} --password-stdin
+            docker push ${DOCKERHUB_USERNAME}/capstone:v2
   
   build_network:
     executor: aws-cli/default

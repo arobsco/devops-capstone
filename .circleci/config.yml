@@ -28,15 +28,15 @@ jobs:
     steps:
         - checkout
         - run:
-          name: Build Docker Image
-          command: |
-            cd app
-            docker build -t ${DOCKERHUB_USERNAME}/capstone:v2  .
+            name: Build Docker Image
+            command: |
+              cd app
+              docker build -t ${DOCKERHUB_USERNAME}/capstone:v2  .
         - run:
-          name: Publish Docker Image
-          command: |
-            echo "${DOCKERHUB_PASSWORD}" | docker login --username ${DOCKERHUB_USERNAME} --password-stdin
-            docker push ${DOCKERHUB_USERNAME}/capstone:v2
+            name: Publish Docker Image
+            command: |
+              echo "${DOCKERHUB_PASSWORD}" | docker login --username ${DOCKERHUB_USERNAME} --password-stdin
+              docker push ${DOCKERHUB_USERNAME}/capstone:v2
   
   build_network:
     executor: aws-cli/default

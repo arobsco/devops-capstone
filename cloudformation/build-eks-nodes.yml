@@ -1,0 +1,70 @@
+Description:
+  Create EKS Nodes
+
+Parameters:
+  EnvironmentName:
+    Description: An Environment name that will be prefixed to resources
+    Type: String
+
+  MinSize:
+    Description: Minimum number of web application servers
+    Type: String
+
+  MaxSize:
+    Description: Maximum number of web application servers
+    Type: String
+
+  DesiredSize:
+    Description: How many instances should be created.
+    Type: Number
+
+Resources:
+
+  NodeInstanceRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      RoleName: !Sub ${EnvironmentName}-Node-Group-IAM-Role
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+      ManagedPolicyArns:
+        - !Sub "arn:${AWS::Partition}:iam::aws:policy/AmazonEKSWorkerNodePolicy"
+        - !Sub "arn:${AWS::Partition}:iam::aws:policy/AmazonEKS_CNI_Policy"
+        - !Sub "arn:${AWS::Partition}:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+      Path: /
+
+  NodeGroup:
+    Type: AWS::EKS::Nodegroup
+    Properties:
+      ClusterName: !Sub ${EnvironmentName}-EKS-Cluster
+      NodeRole: !GetAtt NodeInstanceRole.Arn
+      NodegroupName: !Sub ${EnvironmentName}-Node-Group
+      ScalingConfig:
+        MinSize: !Ref MinSize
+        MaxSize: !Ref MaxSize
+        DesiredSize: !Ref DesiredSize
+      Subnets:
+        Fn::Split:
+          - ","
+          - Fn::ImportValue:
+              Fn::Sub: ${EnvironmentName}-PUB-NETS
+
+Outputs:
+
+  NodeInstanceRole:
+    Description: The node instance role
+    Value: !GetAtt NodeInstanceRole.Arn
+    Export:
+      Name: !Sub ${EnvironmentName}-Instance-Role
+
+  NodeGroup:
+    Description: The node group for EKS
+    Value: !Ref NodeGroup
+    Export:
+      Name: !Sub ${EnvironmentName}-Node-Group

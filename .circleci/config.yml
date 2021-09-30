@@ -1,0 +1,167 @@
+version: 2.1
+
+orbs:
+
+	aws-eks: circleci/aws-eks@1.1.0
+  aws-cli: circleci/aws-cli@2.0.3
+  kubernetes: circleci/kubernetes@0.12.0
+
+jobs:
+
+	lint_dockerfile:
+		docker:
+			- image: cimg/python:3.9.7
+		steps:
+			- checkout
+			- run:
+				name: Install Hadolint
+				command: |
+						python3 -m venv venv
+						. venv/bin/activate
+						wget -O ./hadolint https://github.com/hadolint/hadolint/releases/download/v1.16.3/hadolint-Linux-x86_64 &&\
+						chmod +x ./hadolint
+			- run:
+				name: Lint Dockerfile
+				command: |
+						./hadolint app/Dockerfile
+
+	build_image:
+		docker:
+	 		- image: cimg/base:2021.07
+		steps:
+				- checkout
+				- run: |
+					cd app
+					docker build -t ${DOCKERHUB_USERNAME}/capstone:v2  .
+				- run: |
+					echo "${DOCKERHUB_PASSWORD}" | docker login --username ${DOCKERHUB_USERNAME} --password-stdin
+					docker push ${DOCKERHUB_USERNAME}/capstone:v2
+	
+  build_network:
+    executor: aws-cli/default
+    steps:
+      - checkout
+      - aws-cli/setup
+      - run:
+          name: Deploy Cloudformation script to build network
+          command: |
+            cd cloudformation
+            aws cloudformation deploy --template-file build-base-network.yml --tags project=${ENVIRONMENT_NAME}-capstone --stack-name Network-Capstone-${CIRCLE_WORKFLOW_ID} --parameter-overrides file://aws-params.json
+
+  create_eks_cluster:
+    executor: aws-cli/default
+    steps:
+      - checkout
+      - aws-cli/setup
+      - run:
+          name: Create the EKS Cluster
+          no_output_timeout: 20m
+          command: |
+            cd cloudformation
+            aws cloudformation deploy --template-file build-eks-cluster.yml --tags project=${ENVIRONMENT_NAME}-capstone --stack-name EKS-Cluster-Capstone-${CIRCLE_WORKFLOW_ID} --parameter-overrides file://aws-params.json --capabilities CAPABILITY_NAMED_IAM
+
+  create_eks_nodes:
+    executor: aws-cli/default
+    steps:
+      - checkout
+      - aws-cli/setup
+      - run:
+          name: Create the EKS Nodes
+          command: |
+            cd cloudformation
+            aws cloudformation deploy --template-file build-eks-nodes.yml --tags project=${ENVIRONMENT_NAME}-capstone --stack-name EKS-Nodes-Capstone-${CIRCLE_WORKFLOW_ID} --parameter-overrides file://aws-params.json --capabilities CAPABILITY_NAMED_IAM
+
+  # create_ec2_instances:
+  #   executor: aws-cli/default
+  #   steps:
+  #     - checkout
+  #     - aws-cli/setup
+  #     - run:
+  #         name: Create the EC2
+  #         command: |
+  #           cd cloudformation
+  #           aws cloudformation deploy --template-file build-ec2.yml --tags project=${ENVIRONMENT_NAME}-capstone --stack-name EC2-Capstone-${CIRCLE_WORKFLOW_ID} --parameter-overrides file://aws-params.json
+  
+	deploy:
+		executor: aws-eks/python3
+		parameters:
+			cluster-name:
+				description: |
+					EKS cluster name
+				type: string
+		steps:
+			- checkout
+			- aws-eks/update-kubeconfig-with-authenticator:
+					cluster-name: << parameters.cluster-name >>
+					install-kubectl: true
+			- kubernetes/create-or-update-resource:
+					get-rollout-status: true
+					resource-file-path: k8s/deploy-v1.yml
+					resource-name: deployment/capstone
+
+	test_deployment:
+		executor: aws-eks/python3
+		parameters:
+			cluster-name:
+				description: |
+					EKS Cluster Name
+				type: string
+		steps:
+			- kubernetes/install
+			- aws-eks/update-kubeconfig-with-authenticator:
+					cluster-name: << parameters.cluster-name >>
+					aws-region: eu-west-2
+			- run:
+					name: Test EKS Cluster
+					command: |
+						kubectl get svc
+						kubectl get pods
+						kubectl describe pods
+						kubectl get nodes
+						kubectl get deployment
+						kubectl describe service capstone
+						kubectl get services
+
+	update_deployment:
+	executor: aws-eks/python3
+	parameters:
+		cluster-name:
+			description: |
+				Name of the EKS cluster
+			type: string
+	steps:
+		- checkout
+		- aws-eks/update-kubeconfig-with-authenticator:
+				cluster-name: << parameters.cluster-name >>
+				aws-region: eu-west-2
+				install-kubectl: true
+		- kubernetes/create-or-update-resource:
+				get-rollout-status: true
+				resource-file-path: /k8s/deploy-v2.yml
+				resource-name: deployment/capstone
+		- run:
+				command: |
+					kubectl rollout status deployment capstone
+					kubectl get deployment capstone
+
+workflows:
+	main:
+  	jobs:
+    	- lint_dockerfile
+      - build_image:
+          requires: [lint_dockerfile]
+      - build_network:
+          requires: [build_image]
+      - create_eks_cluster:
+          requires: [build_network]
+      - create_eks_nodes:
+          requires: [create_eks_cluster]
+      - deploy:
+          cluster-name: CapstoneEnvironment-EKS-Cluster
+          requires: [create_eks_nodes]
+      - test_deployment:
+          cluster-name: CapstoneEnvironment-EKS-Cluster
+          requires: [deploy]
+      - update_deployment:
+      		cluster-name: CapstoneEnvironment-EKS-Cluster
+					requires: [test_deployment]

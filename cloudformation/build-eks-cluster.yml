@@ -1,0 +1,63 @@
+Description: >
+  Build EKS Clusters
+  
+Parameters:
+  EnvironmentName:
+    Description: An Environment name that will be prefixed to resources
+    Type: String
+
+Resources:
+
+  ClusterInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: !Sub ${EnvironmentName}-Cluster-IAM-Profile
+      Path: "/"
+      Roles:
+        - !Ref EKSClusterRole
+
+  EKSClusterRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${EnvironmentName}-Cluster-IAM-Role
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - eks.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: "/"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEKSClusterPolicy
+        - arn:aws:iam::aws:policy/AmazonEKSServicePolicy
+        - arn:aws:iam::aws:policy/ElasticLoadBalancingFullAccess
+
+  CapstoneCluster:
+    Type: AWS::EKS::Cluster
+    Properties:
+      Version: "1.21"
+      Name: !Sub ${EnvironmentName}-EKS-Cluster
+      RoleArn: !GetAtt EKSClusterRole.Arn
+      ResourcesVpcConfig:
+        SecurityGroupIds:
+          - Fn::ImportValue: !Sub ${EnvironmentName}-SECG
+        SubnetIds:
+          Fn::Split:
+            - ","
+            - Fn::ImportValue:
+                Fn::Sub: ${EnvironmentName}-PUB-NETS
+Outputs:
+  EksId:
+    Description: EKS ID
+    Value: !Ref CapstoneCluster
+    Export:
+      Name: !Sub ${EnvironmentName}-EKS-Cluster
+
+  EKSRoleArn:
+    Description: Role for accessing and creating aws resources
+    Value: !GetAtt EKSClusterRole.Arn
+    Export:
+      Name: !Sub ${EnvironmentName}-EKS-Role

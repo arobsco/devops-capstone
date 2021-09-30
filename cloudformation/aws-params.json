@@ -1,0 +1,38 @@
+[
+	{
+		"ParameterKey": "EnvironmentName",
+		"ParameterValue": "CapstoneEnvironment"
+	},
+	{
+		"ParameterKey": "VpcCIDR",
+		"ParameterValue": "10.0.0.0/16"
+    },
+	{
+		"ParameterKey": "PublicSubnet1CIDR",
+		"ParameterValue": "10.0.0.0/24"
+	},
+	{
+		"ParameterKey": "PublicSubnet2CIDR",
+		"ParameterValue": "10.0.1.0/24"
+	},
+	{
+		"ParameterKey": "MinSize",
+		"ParameterValue": "2"
+    },
+	{
+		"ParameterKey": "MaxSize",
+		"ParameterValue": "6"
+	},
+	{
+		"ParameterKey": "DesiredSize",
+		"ParameterValue": "3"
+	},
+	{
+		"ParameterKey": "SSHKeyName",
+		"ParameterValue": "udacity"
+    },
+	{
+		"ParameterKey": "ImageId",
+		"ParameterValue": "ami-02fe94dee086c0c37"
+	}
+]

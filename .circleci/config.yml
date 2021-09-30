@@ -24,8 +24,7 @@ jobs:
               ./hadolint --ignore DL3008 app/Dockerfile
 
   build_image:
-    docker:
-       - image: cimg/base:2021.07
+    machine: true
     steps:
         - checkout
         - run: |

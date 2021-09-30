@@ -21,16 +21,20 @@ jobs:
       - run:
           name: Lint Dockerfile
           command: |
-              ./hadolint --ignore DL3008 app/Dockerfile
+              ./hadolint --ignore DL3008 --ignore DL3009 app/Dockerfile
 
   build_image:
     machine: true
     steps:
         - checkout
-        - run: |
+        - run:
+          name: Build Docker Image
+          command: |
             cd app
             docker build -t ${DOCKERHUB_USERNAME}/capstone:v2  .
-        - run: |
+        - run:
+          name: Publish Docker Image
+          command: |
             echo "${DOCKERHUB_PASSWORD}" | docker login --username ${DOCKERHUB_USERNAME} --password-stdin
             docker push ${DOCKERHUB_USERNAME}/capstone:v2
   

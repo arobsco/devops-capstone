@@ -21,7 +21,7 @@ jobs:
       - run:
           name: Lint Dockerfile
           command: |
-              ./hadolint app/Dockerfile
+              ./hadolint --ignore DL3008 app/Dockerfile
 
   build_image:
     docker:

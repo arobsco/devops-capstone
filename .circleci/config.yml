@@ -12,16 +12,16 @@ jobs:
     steps:
       - checkout
       - run:
-        name: Install Hadolint
-        command: |
-            python3 -m venv venv
-            . venv/bin/activate
-            wget -O ./hadolint https://github.com/hadolint/hadolint/releases/download/v1.16.3/hadolint-Linux-x86_64 &&\
-            chmod +x ./hadolint
+          name: Install Hadolint
+          command: |
+              python3 -m venv venv
+              . venv/bin/activate
+              wget -O ./hadolint https://github.com/hadolint/hadolint/releases/download/v1.16.3/hadolint-Linux-x86_64 &&\
+              chmod +x ./hadolint
       - run:
-        name: Lint Dockerfile
-        command: |
-            ./hadolint app/Dockerfile
+          name: Lint Dockerfile
+          command: |
+              ./hadolint app/Dockerfile
 
   build_image:
     docker:
@@ -121,26 +121,26 @@ jobs:
             kubectl get services
 
   update_deployment:
-  executor: aws-eks/python3
-  parameters:
-    cluster-name:
-      description: |
-        Name of the EKS cluster
-      type: string
-  steps:
-    - checkout
-    - aws-eks/update-kubeconfig-with-authenticator:
-        cluster-name: << parameters.cluster-name >>
-        aws-region: eu-west-2
-        install-kubectl: true
-    - kubernetes/create-or-update-resource:
-        get-rollout-status: true
-        resource-file-path: /k8s/deploy-v2.yml
-        resource-name: deployment/capstone
-    - run:
-        command: |
-          kubectl rollout status deployment capstone
-          kubectl get deployment capstone
+    executor: aws-eks/python3
+    parameters:
+      cluster-name:
+        description: |
+          Name of the EKS cluster
+        type: string
+    steps:
+      - checkout
+      - aws-eks/update-kubeconfig-with-authenticator:
+          cluster-name: << parameters.cluster-name >>
+          aws-region: eu-west-2
+          install-kubectl: true
+      - kubernetes/create-or-update-resource:
+          get-rollout-status: true
+          resource-file-path: /k8s/deploy-v2.yml
+          resource-name: deployment/capstone
+      - run:
+          command: |
+            kubectl rollout status deployment capstone
+            kubectl get deployment capstone
 
 workflows:
   main:

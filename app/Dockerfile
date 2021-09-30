@@ -1,10 +1,12 @@
 FROM ubuntu:18.04
 
-RUN apt-get update
-RUN apt-get install -y nginx
+RUN apt-get update && apt-get install --no-install-recommends -y python \
+ && apt-get clean \
+ && rm -rf /var/lib/apt/lists/*
+RUN apt-get install -y nginx=1.20.1
 
-ADD nginx.conf /etc/nginx/nginx.conf
-ADD ./www /www
+COPY nginx.conf /etc/nginx/nginx.conf
+COPY ./www /www
 
 EXPOSE 80
 CMD ["nginx"]

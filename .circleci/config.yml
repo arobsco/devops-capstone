@@ -114,6 +114,17 @@ jobs:
       - aws-eks/update-kubeconfig-with-authenticator:
           cluster-name: << parameters.cluster-name >>
           aws-region: eu-west-2
+      - run:
+          name: Wait and Test cluster
+          command: |
+            sleep 1m
+            kubectl get svc
+            kubectl get pods
+            kubectl describe pods
+            kubectl get nodes
+            kubectl get deployment
+            kubectl describe service capstone
+            kubectl get services
 
   update_deployment:
     executor: aws-eks/python3
@@ -139,17 +150,17 @@ workflows:
   main:
     jobs:
       - lint_dockerfile
-      # - build_image:
-      #     requires: [lint_dockerfile]
-      # - build_network:
-      #     requires: [build_image]
-      # - create_eks_cluster:
-      #     requires: [build_network]
-      # - create_eks_nodes:
-      #     requires: [create_eks_cluster]
+      - build_image:
+          requires: [lint_dockerfile]
+      - build_network:
+          requires: [build_image]
+      - create_eks_cluster:
+          requires: [build_network]
+      - create_eks_nodes:
+          requires: [create_eks_cluster]
       - deploy:
           cluster-name: CapstoneEnvironment-EKS-Cluster
-          #requires: [create_eks_nodes]
+          requires: [create_eks_nodes]
       - test_deployment:
           cluster-name: CapstoneEnvironment-EKS-Cluster
           requires: [deploy]

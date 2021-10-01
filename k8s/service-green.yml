@@ -1,11 +1,10 @@
 kind: Service
 apiVersion: v1
 metadata:
-  name: capstone-service
+  name: capstone
   labels:
     app: capstone
     role: green
-    env: prod
 spec:
   type: LoadBalancer
   selector:

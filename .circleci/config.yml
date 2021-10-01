@@ -98,6 +98,7 @@ jobs:
       - kubernetes/create-or-update-resource:
           get-rollout-status: true
           resource-file-path: k8s/deploy-blue.yml
+          resource-name: deployment/capstone
       - kubernetes/create-or-update-resource:
           resource-file-path: k8s/service-blue.yml
 
@@ -130,6 +131,7 @@ jobs:
       - kubernetes/create-or-update-resource:
           get-rollout-status: true
           resource-file-path: k8s/deploy-green.yml
+          resource-name: deployment/capstone
       - kubernetes/create-or-update-resource:
           resource-file-path: k8s/service-green.yml
 
@@ -137,17 +139,17 @@ workflows:
   main:
     jobs:
       - lint_dockerfile
-      - build_image:
-          requires: [lint_dockerfile]
-      - build_network:
-          requires: [build_image]
-      - create_eks_cluster:
-          requires: [build_network]
-      - create_eks_nodes:
-          requires: [create_eks_cluster]
+      # - build_image:
+      #     requires: [lint_dockerfile]
+      # - build_network:
+      #     requires: [build_image]
+      # - create_eks_cluster:
+      #     requires: [build_network]
+      # - create_eks_nodes:
+      #     requires: [create_eks_cluster]
       - deploy:
           cluster-name: CapstoneEnvironment-EKS-Cluster
-          requires: [create_eks_nodes]
+          #requires: [create_eks_nodes]
       - test_deployment:
           cluster-name: CapstoneEnvironment-EKS-Cluster
           requires: [deploy]

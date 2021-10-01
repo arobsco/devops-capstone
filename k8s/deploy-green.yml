@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: capstone-deployment-green
+spec:
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: capstone
+        role: green
+    spec:
+      containers:
+      - name: capstone-container
+        image: arobsco/capstone:v2
+        ports:
+        - containerPort: 80
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80

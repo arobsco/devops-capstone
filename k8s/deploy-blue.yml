@@ -1,24 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: capstone
+  name: capstone-deployment-blue
 spec:
-  selector:
-    matchLabels:
-      app: capstone
-  replicas: 3
+  replicas: 2
   template:
     metadata:
       labels:
         app: capstone
+        role: blue
     spec:
       containers:
-      - name: capstone
+      - name: capstone-container
         image: arobsco/capstone:v1
         ports:
         - containerPort: 80
-  strategy:
-    rollingUpdate:
-      maxSurge: 25%
-      maxUnavailable: 25%
-    type: RollingUpdate
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80

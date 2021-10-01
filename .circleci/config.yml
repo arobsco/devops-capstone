@@ -97,8 +97,9 @@ jobs:
           install-kubectl: true
       - kubernetes/create-or-update-resource:
           get-rollout-status: true
-          resource-file-path: k8s/deploy-v1.yml
-          resource-name: deployment/capstone
+          resource-file-path: k8s/deploy-blue.yml
+      - kubernetes/create-or-update-resource:
+          resource-file-path: k8s/service-blue.yml
 
   test_deployment:
     executor: aws-eks/python3
@@ -112,16 +113,6 @@ jobs:
       - aws-eks/update-kubeconfig-with-authenticator:
           cluster-name: << parameters.cluster-name >>
           aws-region: eu-west-2
-      - run:
-          name: Test EKS Cluster
-          command: |
-            kubectl get svc
-            kubectl get pods
-            kubectl describe pods
-            kubectl get nodes
-            kubectl get deployment
-            kubectl describe service capstone
-            kubectl get services
 
   update_deployment:
     executor: aws-eks/python3
@@ -138,12 +129,9 @@ jobs:
           install-kubectl: true
       - kubernetes/create-or-update-resource:
           get-rollout-status: true
-          resource-file-path: /k8s/deploy-v2.yml
-          resource-name: deployment/capstone
-      - run:
-          command: |
-            kubectl rollout status deployment capstone
-            kubectl get deployment capstone
+          resource-file-path: k8s/deploy-green.yml
+      - kubernetes/create-or-update-resource:
+          resource-file-path: k8s/service-green.yml
 
 workflows:
   main:
